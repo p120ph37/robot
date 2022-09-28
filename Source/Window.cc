@@ -15,6 +15,8 @@
 #include "Process.h"
 using std::string;
 
+#include <unordered_set>
+using std::unordered_set;
 #include <regex>
 using std::regex;
 using std::regex_match;
@@ -1984,12 +1986,29 @@ WindowList Window::GetList (const char* title, int32 pid)
 
 	if (pid == 0)
 	{
-		// Retrieve list of current processes
-		ProcessList list = Process::GetList();
-		for (uintptr i = 0; i < list.size(); ++i)
-			processPID (list[i].GetPID());
-	}
+		// Scanning all pids is incredibly slow (the AXUIElementCreateApplication method is throttled it seems).
+		// Instead, discover the windows that actually exist, and scan only the PIDs which own windows.
+		auto windowList = CGWindowListCopyWindowInfo (kCGWindowListOptionAll, kCGNullWindowID);
+		if (windowList != nullptr)
+		{
+			unordered_set <int> pids;
+			auto count = CFArrayGetCount (windowList);
+			for (CFIndex i = 0; i < count; ++i)
+			{
+				// Get the dictionary at the index
+				auto dict = (CFDictionaryRef)
+					CFArrayGetValueAtIndex (windowList, i);
+				// Get the PID value from the dictionary
+				int pid;
+				if (CFNumberGetValue((CFNumberRef) CFDictionaryGetValue (dict, kCGWindowOwnerPID), kCFNumberIntType, &pid))
+					pids.insert(pid);
+			}
 
+			for (auto itr = pids.begin(); itr != pids.end(); itr++)
+				processPID (*itr);
+		}
+		CFRelease (windowList);
+	}
 	else
 	{
 		// Assumed valid
