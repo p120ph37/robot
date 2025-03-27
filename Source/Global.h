@@ -39,19 +39,19 @@
 #if defined (__linux__)
 
 	#define ROBOT_OS_LINUX
-	#if defined (__x86_64__)
-		#define ROBOT_ARCH_64
-	#else
+	#if defined (__i386__)
 		#define ROBOT_ARCH_32
+	#else
+		#define ROBOT_ARCH_64
 	#endif
 
 #elif defined (__APPLE__) && defined (__MACH__)
 
 	#define ROBOT_OS_MAC
-	#if defined (__x86_64__)
-		#define ROBOT_ARCH_64
-	#else
+	#if defined (__i386__)
 		#define ROBOT_ARCH_32
+	#else
+		#define ROBOT_ARCH_64
 	#endif
 
 #elif defined (_WIN32)
